@@ -1,0 +1,12 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PhpCSValidationInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false">
+      <option name="CODING_STANDARD" value="WordPress" />
+      <option name="WARNING_HIGHLIGHT_LEVEL_NAME" value="WEAK WARNING" />
+      <option name="USE_INSTALLED_PATHS" value="true" />
+      <option name="INSTALLED_PATHS" value="C:\projects\PHP Code Sniffer\wpcs" />
+      <option name="EXTENSIONS" value="php,js,css,inc" />
+    </inspection_tool>
+  </profile>
+</component>

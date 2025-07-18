@@ -1,24 +1,40 @@
 mod screens;
+mod player;
+mod types;
+mod objects;
 
 use eframe::{egui};
 use eframe::epaint::StrokeKind;
 use egui::{Color32, Pos2, Rect, Stroke, Vec2};
-use crate::screens::{huds, title_screen};
+use crate::screens::{huds, title_screen, level1_screen};
 use crate::screens::traits::{HudRenderer, ScreenRenderer};
-
+use crate::player::camera::Camera;
+use crate::types::geometry::*;
 
 struct Game {
     hud: Box<dyn HudRenderer>,
     current_screen:  Box<dyn ScreenRenderer>,
+    camera: Camera,
+
     start_point: Pos2,
     end_point: Pos2,
 }
 
 impl Game {
-    fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Self {
+    fn new(_cc: &eframe::CreationContext<'_>) -> Game {
+        let camera = player::camera::Camera::new(
+            types::geometry::Point3D { x: 0.0, y: 10.0, z: 10.0 },
+            Vector3D { x: 0.0, y: 0.0, z: 1.0 },
+            90.0,
+            Rectangle { width: 800, height: 600 },
+            1.0,
+            1000.0,
+        );
+
+        Game {
             hud: Box::new(huds::TitleHud::new()),
-            current_screen: Box::new(title_screen::TitleScreen::new()),
+            current_screen: Box::new(level1_screen::Level1Screen::new()),
+            camera,
             start_point: Pos2::new(100.0, 100.0),
             end_point: Pos2::new(200.0, 200.0),
         }
@@ -37,10 +53,12 @@ impl eframe::App for Game {
             // Get the painter for custom drawing
             let painter = ui.painter();
             
-            demo_stuff(painter, ui, canvas_rect, self); // Delete me
+         //   demo_stuff(painter, ui, canvas_rect, self); // Delete me
+
+            //TODO: Move player (camera)
 
             // Screen is rendered first
-            self.current_screen.render(painter);
+            self.current_screen.render(&self.camera, painter);
             
             // HUD is last
             self.hud.render(painter);

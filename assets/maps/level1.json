@@ -1,0 +1,32 @@
+[
+  {
+    "id": "EnemyTank1",
+    "object_type": "enemy_tank",
+    "model": "npcs/tank.obj",
+    "position": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 5.0
+    },
+    "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+    }
+  },
+  {
+    "id": "TestCube1",
+    "object_type": "cube",
+    "model": "cube.obj",
+    "position": {
+      "x": -3.0,
+      "y": 2.0,
+      "z": 8.0
+    },
+    "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+    }
+  }
+]

@@ -38,7 +38,7 @@ struct JsonEntity {
     id: String,
     object_type: String,
     model: String,
-    position: Point3D,
+    position: Vector3D,
     rotation: EulerAngles,
 }
 

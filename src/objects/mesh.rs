@@ -4,7 +4,7 @@ use crate::types::geometry::*;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Mesh {
     pub verts: Vec<Point3D>,
-    pub position: Point3D,
+    pub position: Vector3D,
     pub rotation: EulerAngles,
 }
 

@@ -3,6 +3,17 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct Face {
+    pub vert_indices: Vec<usize>,
+}
+
+impl Face {
+    pub fn new() -> Self{
+        Self {vert_indices: Vec::new()}
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Point2D {
     pub x: f32,
     pub y: f32,
@@ -26,13 +37,13 @@ impl Vector2D {
     /// Pass a 2D vector and will return the angle in radians between self and the passed in vector.
     ///
     /// The vectors are world space and don't need to be normalised first.
-    pub fn angle_to_other_vector(&self, other_vector: Vector2D) -> f32 {
+    pub fn angle_to_other_vector(&self, other_vector: &Vector2D) -> f32 {
         let dot_product = self.normalise().dot_product(&other_vector.normalise());
 
         f32::acos(dot_product)
     }
 
-    /// # normalise()
+    /// # normalise
     /// Get a normalised copy of the Vector2D i.e. the length of the vector is 1 and the x and y
     /// coords are adjusted to make that the case.
     pub fn normalise(&self) -> Self {
@@ -43,12 +54,23 @@ impl Vector2D {
         }
     }
 
-    /// # dot_product()
+    /// # dot_product
     /// Pass in a vector and this will return the dot product of self and the passed in vector
     pub fn dot_product(&self, vector: &Vector2D) -> f32 {
         let a1b1 = self.x * vector.x;
         let a1b2 = self.y * vector.y;
         a1b1 + a1b2
+    }
+
+    /// # subtract
+    /// Pass in vector and it will be subtracted from self and the result returned.
+    ///
+    /// This gives you the vector from the tip of self to the tip of vector.
+    pub fn subtract(&self, vector: &Vector2D) -> Self {
+        Self {
+            x: vector.x - self.x,
+            y: vector.y - self.y,
+        }
     }
 }
 
@@ -57,6 +79,62 @@ pub struct Vector3D {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+}
+
+impl Vector3D {
+    /// # normalise
+    /// Get a normalised copy of the Vector3D i.e. the length of the vector is 1 and the x, y, and z
+    /// coords are adjusted to make that the case.
+    pub fn normalise(&self) -> Self {
+        let h = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        Self {
+            x: self.x / h,
+            y: self.y / h,
+            z: self.z / h,
+        }
+    }
+
+    /// # angle_to_other_vector
+    /// Pass a 3D vector and will return the angle in radians between self and the passed in vector.
+    ///
+    /// The vectors are world space and don't need to be normalised first.
+    pub fn angle_to_other_vector(&self, other_vector: &Vector3D) -> f32 {
+        let dot_product = self.normalise().dot_product(&other_vector.normalise());
+        f32::acos(dot_product)
+    }
+
+    /// # dot_product
+    /// Pass in a vector and this will return the dot product of self and the passed in vector
+    pub fn dot_product(&self, vector: &Vector3D) -> f32 {
+        let a1b1 = self.x * vector.x;
+        let a2b2 = self.y * vector.y;
+        let a3b3 = self.z * vector.z;
+        a1b1 + a2b2 + a3b3
+    }
+
+    /// # subtract
+    /// Pass in vector and it will be subtracted from self and the result returned.
+    ///
+    /// This gives you the vector from the tip of self to the tip of vector.
+    pub fn subtract(&self, vector: &Vector3D) -> Self {
+        Self {
+            x: vector.x - self.x,
+            y: vector.y - self.y,
+            z: vector.z - self.z,
+        }
+    }
+
+    /// # set_length
+    /// Returns a new Vector3D with the same direction as self but with the specified length.
+    /// If the vector is zero, returns a zero vector.
+    pub fn set_length(&self, length: f32) -> Self {
+        let normalized = self.normalise();
+        Self {
+            x: normalized.x * length,
+            y: normalized.y * length,
+            z: normalized.z * length,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -78,7 +156,9 @@ pub struct EulerAngles {
     pub roll: f32,
 }
 
+/////////////////
 // Vector2D Tests
+/////////////////
 
 // normalise()
 
@@ -87,7 +167,7 @@ mod tests {
     use super::*;
 
     #[test]
-    /// # test_normalise_vector_positive_direction()
+    /// # test_normalise_vector_positive_direction
     /// Tests to ensure that a normalised vector with a positive direction is 1 unit long.
     ///
     /// Slightly problematic because we're comparing floating point values which can give rounding
@@ -107,7 +187,7 @@ mod tests {
     }
 
     #[test]
-    /// # test_normalise_vector_negative_direction()
+    /// # test_normalise_vector_negative_direction
     /// Tests to ensure that a normalised vector with a negative direction is 1 unit long.
     ///
     /// Slightly problematic because we're comparing floating point values which can give rounding
@@ -130,7 +210,7 @@ mod tests {
 // angle_to_other_vector()
 
 #[test]
-/// # test_angle_to_other_vector()
+/// # test_angle_to_other_vector
 /// Tests that the angle between two non-normalised vectors is as expected.
 ///
 /// Vectors are in world space.
@@ -139,7 +219,97 @@ fn test_angle_to_other_vector() {
 
     let other_vector = Vector2D { x: 10.0, y: 0.0 };
 
-    let angle = vector2d.angle_to_other_vector(other_vector);
+    let angle = vector2d.angle_to_other_vector(&other_vector);
 
     assert_eq!(angle, PI / 2.0 );
+}
+
+
+// subtract()
+
+#[test]
+/// # test_subtract
+/// Tests that subtracting vector a from vector b results in a vector from a to b.
+fn test_subtract() {
+    let vector2d = Vector2D { x: 4.0, y: 6.0 };
+    let other_vector = Vector2D { x: 1.0, y: 2.0 };
+    let resultant = vector2d.subtract(&other_vector);
+
+    assert_eq!(-3.0, resultant.x); // Updated to B - A
+    assert_eq!(-4.0, resultant.y); // Updated to B - A
+}
+
+#[test]
+/// # test_subtract_negative
+/// Tests that subtracting vector a from vector b results in a vector from a to b.
+fn test_subtract_negative() {
+    let vector2d = Vector2D { x: 0.0, y: -10.0 };
+    let other_vector = Vector2D { x: -2.0, y: 0.0 };
+    let resultant = vector2d.subtract(&other_vector);
+
+    assert_eq!(-2.0, resultant.x); // Already correct for B - A
+    assert_eq!(10.0, resultant.y); // Already correct for B - A
+}
+
+
+
+/////////////////
+// Vector3D Tests
+/////////////////
+
+#[test]
+/// # test_subtract_vector3d
+/// Tests that subtracting vector a from vector b results in a vector from a to b.
+fn test_subtract_vector3d() {
+    let vector3d = Vector3D { x: 4.0, y: 6.0, z: 8.0 };
+    let other_vector = Vector3D { x: 1.0, y: 2.0, z: 3.0 };
+    let resultant = vector3d.subtract(&other_vector);
+
+    assert_eq!(-3.0, resultant.x); // B - A = 1.0 - 4.0
+    assert_eq!(-4.0, resultant.y); // B - A = 2.0 - 6.0
+    assert_eq!(-5.0, resultant.z); // B - A = 3.0 - 8.0
+}
+
+#[test]
+/// # test_subtract_negative_vector3d
+/// Tests that subtracting vector a from vector b results in a vector from a to b.
+fn test_subtract_negative_vector3d() {
+    let vector3d = Vector3D { x: 0.0, y: -10.0, z: 5.0 };
+    let other_vector = Vector3D { x: -2.0, y: 0.0, z: -3.0 };
+    let resultant = vector3d.subtract(&other_vector);
+
+    assert_eq!(-2.0, resultant.x); // B - A = -2.0 - 0.0
+    assert_eq!(10.0, resultant.y); // B - A = 0.0 - (-10.0)
+    assert_eq!(-8.0, resultant.z); // B - A = -3.0 - 5.0
+}
+
+#[test]
+/// Tests the dot product of two 3D vectors.
+fn test_dot_product_vector3d() {
+    let vector1 = Vector3D { x: 4.0, y: 6.0, z: 8.0 };
+    let vector2 = Vector3D { x: 1.0, y: 2.0, z: 3.0 };
+    let result = vector1.dot_product(&vector2);
+    assert_eq!(40.0, result);
+}
+
+#[test]
+/// Tests the angle between two 3D vectors in radians.
+fn test_angle_to_other_vector3d() {
+    let vector1 = Vector3D { x: 4.0, y: 0.0, z: 0.0 };
+    let vector2 = Vector3D { x: 0.0, y: 3.0, z: 0.0 };
+    let result = vector1.angle_to_other_vector(&vector2);
+    assert!((result - std::f32::consts::FRAC_PI_2).abs() < 1e-5); // Approx 1.5708 radians (90 degrees)
+}
+
+#[test]
+/// Tests setting the length of a 3D vector.
+fn test_set_length_vector3d() {
+    let vector = Vector3D { x: 3.0, y: 4.0, z: 0.0 };
+    let result = vector.set_length(10.0);
+    assert!((result.x - 6.0).abs() < 1e-5);
+    assert!((result.y - 8.0).abs() < 1e-5);
+    assert!((result.z - 0.0).abs() < 1e-5);
+    // Verify new length
+    let magnitude = (result.x * result.x + result.y * result.y + result.z * result.z).sqrt();
+    assert!((magnitude - 10.0).abs() < 1e-5);
 }

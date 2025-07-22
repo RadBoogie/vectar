@@ -58,6 +58,7 @@ pub fn load_assets() -> Result<Vec<Mesh>, Box<dyn std::error::Error>>{
         .into_iter()
         .map(|entity| Mesh {
             verts: load_model_verts(&entity.model), // Load verts from model
+            faces: load_model_faces(&entity.model),
             position: entity.position,
             rotation: entity.rotation,
         })
@@ -91,13 +92,55 @@ fn load_model_verts(model_name: &String) -> Vec<Point3D> {
     verts
 }
 
+fn load_model_faces(model_name: &String) -> Vec<Face> {
+    // Load model from assets
+    let cube_obj = Asset::get(model_name).expect(&format!("Failed to load {}", model_name));
+
+    let obj_content = from_utf8(&cube_obj.data).expect(&format!("Invalid UTF-8 in  {}", model_name));
+
+    // Parse vertices (basic, assumes +Y Forward, +Z Up)
+    let mut faces = Vec::new();
+
+    for line in obj_content.lines() {
+        if line.starts_with("f ") {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+
+            let mut face = Face::new();
+
+            for part in parts {
+
+                if part.contains("f") {
+                    continue;
+                }
+
+                let mut parts: Vec<&str> = part.split("//").collect();
+
+                face.vert_indices.push(parts[0].parse().expect("Invalid vertex index"));
+            }
+
+            faces.push(face);
+        }
+    }
+
+    faces
+}
+
+// TODO: Remove temporary frame counter
+static mut rotation: f32 = 0.0;
+
 impl ScreenRenderer for Level1Screen {
     fn render(&self, camera: &Camera, painter: &Painter) {
+        // TODO: Remove temporary counter
+        unsafe {
+            rotation += 2.5;
+        }
+
         //TODO: Calculate object positions
         
         //TODO: Render map
         
         //TODO: Render game objects
+
 
         for mesh in &self.meshes {
 
@@ -105,27 +148,78 @@ impl ScreenRenderer for Level1Screen {
 
             //TODO: Need to apply transforms before projecting
 
-            let points_2d = camera.to_2d(&mesh.get_transformed_verts());
+            let mut mut_mesh = mesh.clone();
 
+            unsafe {
+                mut_mesh.rotation.pitch += rotation.to_radians();
+                mut_mesh.rotation.roll += rotation.to_radians();
+                mut_mesh.rotation.yaw += rotation.to_radians();
+            }
 
-            for (i, vert) in points_2d.iter().enumerate() {
+            let points_2d = camera.to_2d(&mut_mesh.get_transformed_verts());
 
-                if i < points_2d.len() - 1 {
-                    let current_vert = points_2d.get(i).unwrap();
-                    let next_vert = points_2d.get(i + 1).unwrap(); // Returns Option<&Point3D>
+            for face in &mut_mesh.faces {
 
-                    let start: Pos2 = [(current_vert.x + 2.0) * 100.0, (current_vert.y + 2.0) * 100.0].into();
-                    let end: Pos2 = [(next_vert.x + 2.0) * 100.0, (next_vert.y + 2.0) * 100.0].into();
+                let scale = 400.0;
 
-                    painter.line_segment(
-                        [start, end],
-                        Stroke::new(2.0, Color32::GREEN),
-                    );
+                let first_vert = points_2d.get(face.vert_indices[0] - 1).unwrap();
+                let second_vert = points_2d.get(face.vert_indices[1] - 1).unwrap();
+                let third_vert = points_2d.get(face.vert_indices[2] - 1).unwrap();
+                let fourth_vert = points_2d.get(face.vert_indices[3] - 1).unwrap();
 
-                }
+                let start: Pos2 = [(first_vert.x * scale) + 400.0, (first_vert.y * scale) + 300.0].into();
+                let end: Pos2 = [(second_vert.x * scale) + 400.0, (second_vert.y * scale) + 300.0].into();
 
+                painter.line_segment(
+                    [start, end],
+                    Stroke::new(2.0, Color32::GREEN),
+                );
+
+                let start: Pos2 = [(second_vert.x * scale) + 400.0, (second_vert.y * scale) + 300.0].into();
+                let end: Pos2 = [(third_vert.x * scale) + 400.0, (third_vert.y * scale) + 300.0].into();
+
+                painter.line_segment(
+                    [start, end],
+                    Stroke::new(2.0, Color32::GREEN),
+                );
+
+                let start: Pos2 = [(third_vert.x * scale) + 400.0, (third_vert.y * scale) + 300.0].into();
+                let end: Pos2 = [(fourth_vert.x * scale) + 400.0, (fourth_vert.y * scale) + 300.0].into();
+
+                painter.line_segment(
+                    [start, end],
+                    Stroke::new(2.0, Color32::GREEN),
+                );
+
+                let start: Pos2 = [(fourth_vert.x * scale) + 400.0, (fourth_vert.y * scale) + 300.0].into();
+                let end: Pos2 = [(first_vert.x * scale) + 400.0, (first_vert.y * scale) + 300.0].into();
+
+                painter.line_segment(
+                    [start, end],
+                    Stroke::new(2.0, Color32::GREEN),
+                );
 
             }
+
+
+            //for (i, vert) in points_2d.iter().enumerate() {
+            //
+            //     if i < points_2d.len() - 1 {
+            //         let current_vert = points_2d.get(i).unwrap();
+            //         let next_vert = points_2d.get(i + 1).unwrap(); // Returns Option<&Point3D>
+            //
+            //         let start: Pos2 = [current_vert.x + 400.0, current_vert.y + 300.0].into();
+            //         let end: Pos2 = [next_vert.x + 400.0, next_vert.y + 300.0].into();
+            //
+            //         painter.line_segment(
+            //             [start, end],
+            //             Stroke::new(2.0, Color32::GREEN),
+            //         );
+            //
+            //     }
+            //
+            //
+            // }
 
         }
     }

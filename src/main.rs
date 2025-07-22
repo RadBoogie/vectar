@@ -23,7 +23,7 @@ struct Game {
 impl Game {
     fn new(_cc: &eframe::CreationContext<'_>) -> Game {
         let camera = player::camera::Camera::new(
-            types::geometry::Point3D { x: 0.0, y: 10.0, z: 10.0 },
+            types::geometry::Point3D { x: 0.0, y: 0.0, z: -5.0 },
             Vector3D { x: 0.0, y: 0.0, z: 1.0 },
             90.0,
             Rectangle { width: 800, height: 600 },
@@ -43,7 +43,9 @@ impl Game {
 
 impl eframe::App for Game {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        
+        // Request a repaint every frame for continuous updates
+        ctx.request_repaint();
+
         // Create a central panel that fills the window
         egui::CentralPanel::default().show(ctx, |ui| {
             // Define a canvas area (e.g., a rectangle for drawing)
@@ -64,9 +66,6 @@ impl eframe::App for Game {
             self.hud.render(painter);
         });
     }
-    
-    
-    
 }
 
 fn demo_stuff(painter: &egui::Painter, ui: &egui::Ui, canvas_rect: Rect, game: &mut Game) {

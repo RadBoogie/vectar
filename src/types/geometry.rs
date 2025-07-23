@@ -135,12 +135,63 @@ impl Vector3D {
             z: normalized.z * length,
         }
     }
+
+    fn rotate_yaw(&self, point: &Point3D) -> Point3D {
+        let tx = [
+            [f32::cos(self.y), 0.0, f32::sin(self.y), 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [-f32::sin(self.y), 0.0, f32::cos(self.y), 0.0],
+            [0.0, 0.0, 0.0, 1.0]];
+
+        let point_h = [point.x, point.y, point.z, 1.0];
+
+        let mut result = [0.0, 0.0, 0.0, 0.0];
+
+        for i in 0..4 {
+            for j in 0..4 {
+                result[i] += tx[i][j] * point_h[j];
+            }
+        }
+
+        Point3D { x: result[0], y: result[1], z: result[2] }
+    }
+
+}
+
+impl From<&Point3D> for Vector3D {
+    fn from(point: &Point3D) -> Self {
+        Vector3D {
+            x: point.x,
+            y: point.y,
+            z: point.z,
+        }
+    }
+}
+
+impl From<Vector3D> for EulerAngles {
+    fn from(vec: Vector3D) -> Self {
+        let x = vec.x;
+        let y = vec.y;
+        let z = vec.z;
+
+        // Compute yaw (rotation around Y-axis, in XZ-plane)
+        let yaw = f32::atan2(z, x); // Range: [-π, π]
+
+        // Compute pitch (angle from XZ-plane to the vector)
+        let xz_len = (x * x + z * z).sqrt();
+        let pitch = f32::atan2(y, xz_len); // Range: [-π/2, π/2]
+
+        // Roll is 0 (no twist information from a single vector)
+        let roll = 0.0;
+
+        EulerAngles { yaw, pitch, roll }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Rectangle {
-    pub width: i32,
-    pub height: i32,
+    pub width: f32,
+    pub height: f32,
 }
 
 /// We're exporting meshes from Blender to OBJ file with forward axis -Z and up axis Y
@@ -149,12 +200,32 @@ pub struct Rectangle {
 /// - `Pitch`: X
 /// - `Yaw`: Y
 /// - `Roll`: Z
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq)]
 pub struct EulerAngles {
     pub pitch: f32,
     pub yaw: f32,
     pub roll: f32,
 }
+
+impl From<EulerAngles> for Vector3D {
+    fn from(euler: EulerAngles) -> Self {
+        let (sin_pitch, cos_pitch) = euler.pitch.sin_cos();
+        let (sin_yaw, cos_yaw) = euler.yaw.sin_cos();
+
+        // Compute direction vector components
+        let x = cos_pitch * cos_yaw;
+        let y = sin_pitch;
+        let z = cos_pitch * sin_yaw;
+
+        Vector3D { x, y, z }
+    }
+}
+
+
+
+
+
+
 
 /////////////////
 // Vector2D Tests

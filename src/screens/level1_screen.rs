@@ -141,6 +141,8 @@ impl ScreenRenderer for Level1Screen {
         
         //TODO: Render game objects
 
+        let viewport_width_div_2 = &camera.viewport.width / 2.0;
+        let viewport_height_div_2 = &camera.viewport.height / 2.0;
 
         for mesh in &self.meshes {
 
@@ -160,39 +162,37 @@ impl ScreenRenderer for Level1Screen {
 
             for face in &mut_mesh.faces {
 
-                let scale = 400.0;
-
                 let first_vert = points_2d.get(face.vert_indices[0] - 1).unwrap();
                 let second_vert = points_2d.get(face.vert_indices[1] - 1).unwrap();
                 let third_vert = points_2d.get(face.vert_indices[2] - 1).unwrap();
                 let fourth_vert = points_2d.get(face.vert_indices[3] - 1).unwrap();
 
-                let start: Pos2 = [(first_vert.x * scale) + 400.0, (first_vert.y * scale) + 300.0].into();
-                let end: Pos2 = [(second_vert.x * scale) + 400.0, (second_vert.y * scale) + 300.0].into();
+                let start: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
+                let end: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
 
                 painter.line_segment(
                     [start, end],
                     Stroke::new(2.0, Color32::GREEN),
                 );
 
-                let start: Pos2 = [(second_vert.x * scale) + 400.0, (second_vert.y * scale) + 300.0].into();
-                let end: Pos2 = [(third_vert.x * scale) + 400.0, (third_vert.y * scale) + 300.0].into();
+                let start: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
+                let end: Pos2 = [third_vert.x + viewport_width_div_2, third_vert.y + viewport_height_div_2].into();
 
                 painter.line_segment(
                     [start, end],
                     Stroke::new(2.0, Color32::GREEN),
                 );
 
-                let start: Pos2 = [(third_vert.x * scale) + 400.0, (third_vert.y * scale) + 300.0].into();
-                let end: Pos2 = [(fourth_vert.x * scale) + 400.0, (fourth_vert.y * scale) + 300.0].into();
+                let start: Pos2 = [third_vert.x + viewport_width_div_2, third_vert.y + viewport_height_div_2].into();
+                let end: Pos2 = [fourth_vert.x + viewport_width_div_2, fourth_vert.y + viewport_height_div_2].into();
 
                 painter.line_segment(
                     [start, end],
                     Stroke::new(2.0, Color32::GREEN),
                 );
 
-                let start: Pos2 = [(fourth_vert.x * scale) + 400.0, (fourth_vert.y * scale) + 300.0].into();
-                let end: Pos2 = [(first_vert.x * scale) + 400.0, (first_vert.y * scale) + 300.0].into();
+                let start: Pos2 = [fourth_vert.x + viewport_width_div_2, fourth_vert.y + viewport_height_div_2].into();
+                let end: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
 
                 painter.line_segment(
                     [start, end],

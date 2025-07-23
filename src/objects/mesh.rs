@@ -46,6 +46,8 @@ impl Mesh {
         }
     }
 
+    //TODO: Break these out into geometry...
+
     fn rotate_yaw(&self, point: &Point3D) -> Point3D {
         let tx = [
             [f32::cos(self.rotation.yaw), 0.0, f32::sin(self.rotation.yaw), 0.0],

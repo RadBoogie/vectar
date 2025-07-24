@@ -61,7 +61,7 @@ impl eframe::App for Game {
             let mouse_delta = input.pointer.delta();
             if mouse_delta != egui::Vec2::ZERO && input.pointer.primary_down() {
                 // Use mouse_delta.x, mouse_delta.y to adjust camera (e.g., yaw/pitch)
-                self.camera.rotate(-mouse_delta.x / 5.0, -mouse_delta.y / 5.0);
+                self.camera.rotate(-mouse_delta.x / 5.0, mouse_delta.y / 5.0);
             }
             if input.pointer.button_clicked(egui::PointerButton::Primary) {
                 // Handle left-click (e.g., shoot or select)
@@ -70,8 +70,20 @@ impl eframe::App for Game {
 
             if input.key_down(egui::Key::W) {
                 // Move camera forward
+                self.camera.move_forward(-0.1);
             }
-            
+
+            if input.key_down(egui::Key::A) {
+                self.camera.move_strafe(-0.1);
+            }
+
+            if input.key_down(egui::Key::S) {
+                self.camera.move_forward(0.1);
+            }
+
+            if input.key_down(egui::Key::D) {
+                self.camera.move_strafe(0.1);
+            }
             
             
         });

@@ -40,17 +40,22 @@ impl Camera {
     }
 
     pub fn move_strafe(&mut self, delta: f32) {
-        //TODO: move camera sideways by delta
+        // move camera sideways by delta
+        let camera_vector: Vector3D = self.rotation.into();
+        let camera_vector_rotated_90 = camera_vector.rotate_yaw(90.0_f32.to_radians());
 
-        // self.rotation.yaw += x_delta.to_radians();
+        let scaled_vector = camera_vector_rotated_90.set_length(delta);
 
+        self.position = self.position.translate(&scaled_vector);
     }
 
     pub fn move_forward(&mut self, delta: f32) {
-        //TODO: move camera along its vector by delta
+        // move camera along its vector by delta
+        let camera_vector: Vector3D = self.rotation.into();
 
-        // self.rotation.yaw += x_delta.to_radians();
+        let scaled_vector = camera_vector.set_length(delta);
 
+        self.position = self.position.translate(&scaled_vector);
     }
 
     fn calc_near_plane_distance(view_angle: f32, viewport: &Rectangle) -> f32 {
@@ -87,8 +92,6 @@ impl Camera {
     /// touches the near plane, and the end point holds the 2d (x, y) coordinates of the projected
     /// point.
     pub fn to_2d(&self, points_3d: &Vec<Point3D>) -> Vec<Point2D> {
-        //TODO: Function to take a 3D Object and render to 2D
-
         //TODO: Is any point within our view? If not scram
 
         let mut projected_points: Vec<Point2D> = Vec::new();
@@ -104,9 +107,13 @@ impl Camera {
             let localised_vertex_vector =
                 &vertex_vector_world_space.subtract(&camera_position_vector);
 
+
+
             // The direction the camera is facing
             let camera_vector: Vector3D = self.rotation.into();
             let camera_vector = camera_vector.clone().normalise();
+
+
 
             // Get the angle between the vertex vector and the camera look vector
             let angle_between_vectors =

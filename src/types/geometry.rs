@@ -26,6 +26,17 @@ pub struct Point3D {
     pub z: f32,
 }
 
+impl Point3D {
+    /// Translates the point by the given vector and returns a new Point3D
+    pub fn translate(&self, vector: &Vector3D) -> Point3D {
+        Point3D {
+            x: self.x + vector.x,
+            y: self.y + vector.y,
+            z: self.z + vector.z,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Vector2D {
     pub x: f32,
@@ -112,6 +123,16 @@ impl Vector3D {
         a1b1 + a2b2 + a3b3
     }
 
+    /// # cross_product
+    /// Pass in a vector and this will return the cross product of self and the passed in vector
+    pub fn cross_product(&self, vector: &Vector3D) -> Vector3D {
+        Vector3D {
+            x: self.y * vector.z - self.z * vector.y,
+            y: self.z * vector.x - self.x * vector.z,
+            z: self.x * vector.y - self.y * vector.x,
+        }
+    }
+
     /// # subtract
     /// Pass in vector and it will be subtracted from self and the result returned.
     ///
@@ -136,26 +157,48 @@ impl Vector3D {
         }
     }
 
-    fn rotate_yaw(&self, point: &Point3D) -> Point3D {
+    /// Rotates the vector around the y-axis (yaw) by the given angle in radians
+    pub fn rotate_yaw(&self, radians: f32) -> Vector3D {
+        let cos_theta = f32::cos(radians);
+        let sin_theta = f32::sin(radians);
+
         let tx = [
-            [f32::cos(self.y), 0.0, f32::sin(self.y), 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [-f32::sin(self.y), 0.0, f32::cos(self.y), 0.0],
-            [0.0, 0.0, 0.0, 1.0]];
+            [cos_theta, 0.0, sin_theta],
+            [0.0, 1.0, 0.0],
+            [-sin_theta, 0.0, cos_theta],
+        ];
 
-        let point_h = [point.x, point.y, point.z, 1.0];
+        let vector = [self.x, self.y, self.z];
+        let mut result = [0.0, 0.0, 0.0];
 
-        let mut result = [0.0, 0.0, 0.0, 0.0];
-
-        for i in 0..4 {
-            for j in 0..4 {
-                result[i] += tx[i][j] * point_h[j];
+        for i in 0..3 {
+            for j in 0..3 {
+                result[i] += tx[i][j] * vector[j];
             }
         }
 
-        Point3D { x: result[0], y: result[1], z: result[2] }
+        Vector3D {
+            x: result[0],
+            y: result[1],
+            z: result[2],
+        }
     }
 
+    pub fn rotate(&self, rotation: &Vector3D) -> Vector3D {
+        let (sy, cy) = rotation.y.sin_cos(); // Yaw
+        let (sp, cp) = rotation.x.sin_cos(); // Pitch
+        let (sr, cr) = rotation.z.sin_cos(); // Roll
+        let m = [
+            [cy * cr + sy * sp * sr, sy * sp * cr - cy * sr, sy * cp],
+            [cp * sr, cp * cr, -sp],
+            [sy * cr - cy * sp * sr, sy * sr + cy * sp * cr, cy * cp],
+        ];
+        Vector3D {
+            x: m[0][0] * self.x + m[0][1] * self.y + m[0][2] * self.z,
+            y: m[1][0] * self.x + m[1][1] * self.y + m[1][2] * self.z,
+            z: m[2][0] * self.x + m[2][1] * self.y + m[2][2] * self.z,
+        }
+    }
 }
 
 impl From<&Point3D> for Vector3D {

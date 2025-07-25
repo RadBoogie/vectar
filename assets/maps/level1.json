@@ -30,7 +30,7 @@
     }
   },
   {
-    "id": "TestCube1",
+    "id": "TestCube2",
     "object_type": "cube",
     "model": "cube.obj",
     "position": {
@@ -45,7 +45,7 @@
     }
   },
   {
-    "id": "TestCube1",
+    "id": "TestCube3",
     "object_type": "cube",
     "model": "cube.obj",
     "position": {

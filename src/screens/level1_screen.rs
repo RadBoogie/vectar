@@ -141,6 +141,8 @@ impl ScreenRenderer for Level1Screen {
         
         //TODO: Render game objects
 
+        let viewport_width = camera.viewport.width;
+        let viewport_height = camera.viewport.height;
         let viewport_width_div_2 = &camera.viewport.width / 2.0;
         let viewport_height_div_2 = &camera.viewport.height / 2.0;
 
@@ -161,68 +163,51 @@ impl ScreenRenderer for Level1Screen {
             let points_2d = camera.to_2d(&mut_mesh.get_transformed_verts());
 
             for face in &mut_mesh.faces {
+                let mut verts = Vec::new();
 
-                let first_vert = points_2d.get(face.vert_indices[0] - 1).unwrap();
-                let second_vert = points_2d.get(face.vert_indices[1] - 1).unwrap();
-                let third_vert = points_2d.get(face.vert_indices[2] - 1).unwrap();
-                let fourth_vert = points_2d.get(face.vert_indices[3] - 1).unwrap();
+                for vert_index in &face.vert_indices {
+                    verts.push(points_2d.get(*vert_index - 1).unwrap());
+                }
 
-                let start: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
-                let end: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
+                let num_verts = verts.len();
 
-                painter.line_segment(
-                    [start, end],
-                    Stroke::new(2.0, Color32::GREEN),
-                );
+                let mut face_outside_viewport = true;
 
-                let start: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
-                let end: Pos2 = [third_vert.x + viewport_width_div_2, third_vert.y + viewport_height_div_2].into();
+                // Ignore faces outside view (doesn't really work well)...
+                for i in 0..num_verts {
+                    let first_vert = verts.get(i).unwrap();
+                    let second_vert = if i == num_verts - 1 { verts.get(0).unwrap() } else {verts.get(i + 1).unwrap()} ;
 
-                painter.line_segment(
-                    [start, end],
-                    Stroke::new(2.0, Color32::GREEN),
-                );
+                    let start: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
+                    let end: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
 
-                let start: Pos2 = [third_vert.x + viewport_width_div_2, third_vert.y + viewport_height_div_2].into();
-                let end: Pos2 = [fourth_vert.x + viewport_width_div_2, fourth_vert.y + viewport_height_div_2].into();
+                    if  (start.x >= 0.0 && start.x <= viewport_width) || (start.y >= 0.0 && start.y <= viewport_height) ||
+                        (end.x >= 0.0 && end.x <= viewport_width) || (end.y >= 0.0 && end.y <= viewport_height) {
+                        face_outside_viewport = false;
+                    }
+                }
 
-                painter.line_segment(
-                    [start, end],
-                    Stroke::new(2.0, Color32::GREEN),
-                );
+                if face_outside_viewport{
+                    continue;
+                }
 
-                let start: Pos2 = [fourth_vert.x + viewport_width_div_2, fourth_vert.y + viewport_height_div_2].into();
-                let end: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
+                // Render faces
+                for i in 0..num_verts {
+                    let first_vert = verts.get(i).unwrap();
+                    let second_vert = if i == num_verts - 1 { verts.get(0).unwrap() } else {verts.get(i + 1).unwrap()} ;
 
-                painter.line_segment(
-                    [start, end],
-                    Stroke::new(2.0, Color32::GREEN),
-                );
+                    let start: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
+                    let end: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
 
+                    painter.line_segment(
+                        [start, end],
+                        Stroke::new(2.0, Color32::GREEN),
+                    );
+                }
             }
-
-
-            //for (i, vert) in points_2d.iter().enumerate() {
-            //
-            //     if i < points_2d.len() - 1 {
-            //         let current_vert = points_2d.get(i).unwrap();
-            //         let next_vert = points_2d.get(i + 1).unwrap(); // Returns Option<&Point3D>
-            //
-            //         let start: Pos2 = [current_vert.x + 400.0, current_vert.y + 300.0].into();
-            //         let end: Pos2 = [next_vert.x + 400.0, next_vert.y + 300.0].into();
-            //
-            //         painter.line_segment(
-            //             [start, end],
-            //             Stroke::new(2.0, Color32::GREEN),
-            //         );
-            //
-            //     }
-            //
-            //
-            // }
-
         }
     }
-}
 
+
+}
 

@@ -199,6 +199,76 @@ impl Vector3D {
             z: m[2][0] * self.x + m[2][1] * self.y + m[2][2] * self.z,
         }
     }
+
+    /// Computes the rotation axis and angle (in radians) to align this vector with the positive z-axis (0, 0, 1).
+    /// Returns a tuple (axis: Vector3D, angle: f32), where axis is normalized.
+    pub fn get_rotation_to_z_axis(&self) -> (Vector3D, f32) {
+        // Normalize the input vector
+        let norm_self = self.normalise();
+
+        // Define the z-axis vector
+        let z_axis = Vector3D { x: 0.0, y: 0.0, z: 1.0 };
+
+        // Compute the rotation axis using cross product
+        let axis = norm_self.cross_product(&z_axis);
+
+        // Normalize the axis (avoid division by zero)
+        let axis_length = (axis.x * axis.x + axis.y * axis.y + axis.z * axis.z).sqrt();
+        let norm_axis = if axis_length > 0.0 {
+            Vector3D {
+                x: axis.x / axis_length,
+                y: axis.y / axis_length,
+                z: axis.z / axis_length,
+            }
+        } else {
+            // If vectors are parallel or anti-parallel, use an arbitrary axis (e.g., x-axis)
+            Vector3D { x: 1.0, y: 0.0, z: 0.0 }
+        };
+
+        // Compute the angle using dot product
+        let dot = norm_self.dot_product(&z_axis);
+        // Clamp dot to [-1, 1] to avoid floating-point errors
+        let dot = dot.max(-1.0).min(1.0);
+        let angle = f32::acos(dot);
+
+        (norm_axis, angle)
+    }
+
+    /// Rotates the vector around the given axis by the specified angle (in radians).
+    /// The axis must be normalized.
+    pub fn rotate_around_axis(&self, axis: &Vector3D, angle: f32) -> Vector3D {
+        let cos_theta = f32::cos(angle);
+        let sin_theta = f32::sin(angle);
+        let one_minus_cos = 1.0 - cos_theta;
+
+        // Build the rotation matrix
+        let m = [
+            [
+                cos_theta + axis.x * axis.x * one_minus_cos,
+                axis.x * axis.y * one_minus_cos - axis.z * sin_theta,
+                axis.x * axis.z * one_minus_cos + axis.y * sin_theta,
+            ],
+            [
+                axis.y * axis.x * one_minus_cos + axis.z * sin_theta,
+                cos_theta + axis.y * axis.y * one_minus_cos,
+                axis.y * axis.z * one_minus_cos - axis.x * sin_theta,
+            ],
+            [
+                axis.z * axis.x * one_minus_cos - axis.y * sin_theta,
+                axis.z * axis.y * one_minus_cos + axis.x * sin_theta,
+                cos_theta + axis.z * axis.z * one_minus_cos,
+            ],
+        ];
+
+        // Apply the rotation matrix to the vector
+        Vector3D {
+            x: m[0][0] * self.x + m[0][1] * self.y + m[0][2] * self.z,
+            y: m[1][0] * self.x + m[1][1] * self.y + m[1][2] * self.z,
+            z: m[2][0] * self.x + m[2][1] * self.y + m[2][2] * self.z,
+        }
+    }
+
+
 }
 
 impl From<&Point3D> for Vector3D {
@@ -237,7 +307,7 @@ pub struct Rectangle {
     pub height: f32,
 }
 
-/// We're exporting meshes from Blender to OBJ file with forward axis -Z and up axis Y
+/// We're exporting meshes from Blender to OBJ file with forward axis +Z and up axis Y
 ///
 /// So our Euler angles are mapped as follows:
 /// - `Pitch`: X
@@ -255,10 +325,10 @@ impl From<EulerAngles> for Vector3D {
         let (sin_pitch, cos_pitch) = euler.pitch.sin_cos();
         let (sin_yaw, cos_yaw) = euler.yaw.sin_cos();
 
-        // Compute direction vector components
-        let x = cos_pitch * cos_yaw;
-        let y = sin_pitch;
-        let z = cos_pitch * sin_yaw;
+        // Compute direction vector for +Z forward, +Y up
+        let x = -sin_yaw * cos_pitch; // +X is right
+        let y = sin_pitch;            // +Y is up
+        let z = cos_yaw * cos_pitch;  // +Z is forward
 
         Vector3D { x, y, z }
     }

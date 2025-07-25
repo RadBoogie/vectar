@@ -2,6 +2,7 @@ mod screens;
 mod player;
 mod types;
 mod objects;
+mod utils;
 
 use eframe::{egui};
 use eframe::epaint::StrokeKind;
@@ -18,17 +19,14 @@ struct Game {
     hud: Box<dyn HudRenderer>,
     current_screen:  Box<dyn ScreenRenderer>,
     camera: Camera,
-
-    start_point: Pos2,
-    end_point: Pos2,
 }
 
 impl Game {
     fn new(_cc: &eframe::CreationContext<'_>) -> Game {
         let camera = player::camera::Camera::new(
-            types::geometry::Point3D { x: 0.0, y: 0.0, z: -5.0 },
+            types::geometry::Point3D { x: 0.0, y: 0.0, z: -15.0 },
             EulerAngles { pitch: 0.0, yaw: 0.0, roll: 0.0 },
-            90.0,
+            60.0,
             Rectangle { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
             1000.0,
         );
@@ -37,8 +35,6 @@ impl Game {
             hud: Box::new(huds::TitleHud::new()),
             current_screen: Box::new(level1_screen::Level1Screen::new()),
             camera,
-            start_point: Pos2::new(100.0, 100.0),
-            end_point: Pos2::new(200.0, 200.0),
         }
     }
 }
@@ -70,7 +66,7 @@ impl eframe::App for Game {
 
             if input.key_down(egui::Key::W) {
                 // Move camera forward
-                self.camera.move_forward(-0.1);
+                self.camera.move_forward(0.1);
             }
 
             if input.key_down(egui::Key::A) {
@@ -78,7 +74,7 @@ impl eframe::App for Game {
             }
 
             if input.key_down(egui::Key::S) {
-                self.camera.move_forward(0.1);
+                self.camera.move_forward(-0.1);
             }
 
             if input.key_down(egui::Key::D) {
@@ -97,8 +93,6 @@ impl eframe::App for Game {
 
             // Get the painter for custom drawing
             let painter = ui.painter();
-            
-         //   demo_stuff(painter, ui, canvas_rect, self); // Delete me
 
             //TODO: Move player (camera)
 
@@ -111,37 +105,6 @@ impl eframe::App for Game {
     }
 }
 
-fn demo_stuff(painter: &egui::Painter, ui: &egui::Ui, canvas_rect: Rect, game: &mut Game) {
-    // Draw a white background for the canvas
-    painter.rect_filled(canvas_rect, 0.0, Color32::WHITE);
-
-    // Draw a border around the canvas
-    painter.rect_stroke(canvas_rect, 0.0, Stroke::new(1.0, Color32::BLACK), StrokeKind::Middle);
-
-    // Example: Draw a line
-    painter.line_segment(
-        [game.start_point, game.end_point],
-        Stroke::new(2.0, Color32::RED),
-    );
-
-    // Example: Draw a rectangle
-    let rect = Rect::from_min_max(
-        Pos2::new(150.0, 150.0),
-        Pos2::new(250.0, 200.0),
-    );
-    
-    painter.rect_filled(rect, 0.0, Color32::BLUE);
-
-    // Example: Handle mouse input to update line endpoints
-    if let Some(pos) = ui.input(|i| i.pointer.latest_pos()) {
-        if ui.input(|i| i.pointer.primary_down()) {
-            game.start_point = pos;
-        }
-        if ui.input(|i| i.pointer.secondary_down()) {
-            game.end_point = pos;
-        }
-    }
-}
 
 fn main() -> Result<(), eframe::Error> {
     // Set up the native window options

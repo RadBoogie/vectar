@@ -24,9 +24,9 @@ struct Game {
 impl Game {
     fn new(_cc: &eframe::CreationContext<'_>) -> Game {
         let camera = player::camera::Camera::new(
-            types::geometry::Point3D { x: 0.0, y: 0.0, z: -15.0 },
-            EulerAngles { pitch: 0.0, yaw: 0.0, roll: 0.0 },
-            60.0,
+            types::geometry::Point3D { x: 50.0, y: 0.0, z: 0.0 },
+            EulerAngles { pitch: 0.0, yaw: 90.0_f32.to_radians(), roll: 0.0 },
+            90.0,
             Rectangle { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
             1000.0,
         );
@@ -100,7 +100,7 @@ impl eframe::App for Game {
             self.current_screen.render(&self.camera, painter);
             
             // HUD is last
-            self.hud.render(painter);
+            self.hud.render(&self.camera, painter);
         });
     }
 }

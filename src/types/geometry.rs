@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::ops::Add;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Face {
@@ -92,6 +93,8 @@ pub struct Vector3D {
     pub z: f32,
 }
 
+
+
 impl Vector3D {
     /// # normalise
     /// Get a normalised copy of the Vector3D i.e. the length of the vector is 1 and the x, y, and z
@@ -166,6 +169,33 @@ impl Vector3D {
             [cos_theta, 0.0, sin_theta],
             [0.0, 1.0, 0.0],
             [-sin_theta, 0.0, cos_theta],
+        ];
+
+        let vector = [self.x, self.y, self.z];
+        let mut result = [0.0, 0.0, 0.0];
+
+        for i in 0..3 {
+            for j in 0..3 {
+                result[i] += tx[i][j] * vector[j];
+            }
+        }
+
+        Vector3D {
+            x: result[0],
+            y: result[1],
+            z: result[2],
+        }
+    }
+
+    /// Rotates the vector around the x-axis (pitch) by the given angle in radians
+    pub fn rotate_pitch(&self, radians: f32) -> Vector3D {
+        let cos_theta = f32::cos(radians);
+        let sin_theta = f32::sin(radians);
+
+        let tx = [
+            [1.0, 0.0, 0.0],
+            [0.0, cos_theta, -sin_theta],
+            [0.0, sin_theta, cos_theta],
         ];
 
         let vector = [self.x, self.y, self.z];
@@ -271,6 +301,18 @@ impl Vector3D {
 
 }
 
+impl Add for Vector3D {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Vector3D {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
+    }
+}
+
 impl From<&Point3D> for Vector3D {
     fn from(point: &Point3D) -> Self {
         Vector3D {
@@ -320,6 +362,8 @@ pub struct EulerAngles {
     pub roll: f32,
 }
 
+///Problem: For pitch this seems to rotate the pitch about the X axis at the World origin and not
+/// the camera local origin. Yaw seems to rotate about the camera origin
 impl From<EulerAngles> for Vector3D {
     fn from(euler: EulerAngles) -> Self {
         let (sin_pitch, cos_pitch) = euler.pitch.sin_cos();

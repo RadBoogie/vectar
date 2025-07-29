@@ -232,7 +232,7 @@ impl Vector3D {
 
     /// Computes the rotation axis and angle (in radians) to align this vector with the positive z-axis (0, 0, 1).
     /// Returns a tuple (axis: Vector3D, angle: f32), where axis is normalized.
-    pub fn get_rotation_to_z_axis(&self) -> (Vector3D, f32) {
+    pub fn get_rotation_to_z_forward(&self) -> (Vector3D, f32) {
         // Normalize the input vector
         let norm_self = self.normalise();
 
@@ -257,6 +257,7 @@ impl Vector3D {
 
         // Compute the angle using dot product
         let dot = norm_self.dot_product(&z_axis);
+
         // Clamp dot to [-1, 1] to avoid floating-point errors
         let dot = dot.max(-1.0).min(1.0);
         let angle = f32::acos(dot);
@@ -566,7 +567,7 @@ fn assert_vectors_approx_eq(v1: &Vector3D, v2: &Vector3D, epsilon: f32) {
 fn test_rotation_to_z_axis_already_z() {
     // Input already (0, 0, 1)
     let input = vec3(0.0, 0.0, 1.0);
-    let (axis, angle) = input.get_rotation_to_z_axis();
+    let (axis, angle) = input.get_rotation_to_z_forward();
 
     // Apply rotation
     let result = input.rotate_around_axis(&axis, angle);
@@ -580,7 +581,7 @@ fn test_rotation_to_z_axis_already_z() {
 fn test_rotation_to_z_axis_x_axis() {
     // Input (1, 0, 0) -> rotate 90° around Y
     let input = vec3(1.0, 0.0, 0.0);
-    let (axis, angle) = input.get_rotation_to_z_axis();
+    let (axis, angle) = input.get_rotation_to_z_forward();
 
     // Axis should be ~Y (0, ±1, 0)
     assert_vectors_approx_eq(&axis, &vec3(0.0, 1.0, 0.0), 1e-5);
@@ -596,7 +597,7 @@ fn test_rotation_to_z_axis_x_axis() {
 fn test_rotation_to_z_axis_negative_z() {
     // Input (0, 0, -1) -> rotate 180° (matches Euler 0,90,0)
     let input = vec3(0.0, 0.0, -1.0);
-    let (axis, angle) = input.get_rotation_to_z_axis();
+    let (axis, angle) = input.get_rotation_to_z_forward();
 
     // Axis perpendicular to (0,0,-1) and (0,0,1)
     let dot = axis.dot_product(&vec3(0.0, 0.0, 1.0));
@@ -613,7 +614,7 @@ fn test_rotation_to_z_axis_negative_z() {
 fn test_rotation_to_z_axis_arbitrary() {
     // Input (1, 1, 1) normalized
     let input = vec3(1.0, 1.0, 1.0).normalise();
-    let (axis, angle) = input.get_rotation_to_z_axis();
+    let (axis, angle) = input.get_rotation_to_z_forward();
 
     // Axis perpendicular to input and (0,0,1)
     let dot = axis.dot_product(&input);
@@ -630,7 +631,7 @@ fn test_rotation_to_z_axis_arbitrary() {
 fn test_rotation_to_z_axis_diagonal() {
     // Input (1, 0, 1) -> non-trivial rotation
     let input = vec3(1.0, 0.0, 1.0).normalise();
-    let (axis, angle) = input.get_rotation_to_z_axis();
+    let (axis, angle) = input.get_rotation_to_z_forward();
 
     // Angle should be ~45° (π/4 radians)
     let expected_angle = f32::acos(1.0 / f32::sqrt(2.0));

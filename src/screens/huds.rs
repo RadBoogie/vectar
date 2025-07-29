@@ -31,6 +31,14 @@ impl HudRenderer for TitleHud {
             FontId::new(16.0, egui::FontFamily::Proportional),
             Color32::WHITE,
         );
+
+        painter.text(
+            Pos2::new(10.0, 50.0),
+            Align2::LEFT_TOP,
+            format!("Rot x:{} y:{} z:{}", &camera.rotation_vector.x, &camera.rotation_vector.y, &camera.rotation_vector.z),
+            FontId::new(16.0, egui::FontFamily::Proportional),
+            Color32::WHITE,
+        );
     }
 }
 

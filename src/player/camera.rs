@@ -4,7 +4,7 @@ use crate::types::geometry::*;
 pub struct Camera {
     pub position: Point3D,
     pub rotation: EulerAngles,
-    pub rotation_v: Vector3D,
+    pub rotation_vector: Vector3D,
     view_angle: f32,
     pub viewport: Rectangle,
     pub near_plane_distance: f32,
@@ -25,7 +25,7 @@ impl Camera {
         Self {
             position,
             rotation,
-            rotation_v,
+            rotation_vector: rotation_v,
             view_angle,
             viewport,
             near_plane_distance,
@@ -41,18 +41,38 @@ impl Camera {
     pub fn rotate(&mut self, x_delta: f32, y_delta: f32) {
 
         self.rotation.yaw += x_delta.to_radians();
+        self.rotation_vector = self.rotate_yaw(x_delta.to_radians());
 
-        //TODO: Seems that pitch always applies to World X?
+
         self.rotation.pitch += y_delta.to_radians();
+        self.rotation_vector = self.rotate_pitch(y_delta.to_radians());
 
-      //  println!("Yaw: {:?}", self.rotation.yaw.to_degrees());
-      //  println!("Pitch: {:?}", self.rotation.pitch.to_degrees());
+    }
+
+     fn rotate_pitch(&mut self, pitch_delta: f32) -> Vector3D {
+         println!("Pitch Delta: {:?}", pitch_delta);
+
+         let world_up_vector = Vector3D {x: 0.0, y: 1.0, z: 0.0 };
+
+         let x_axis = self.rotation_vector.cross_product(&world_up_vector).normalise();
+
+         println!("X Axis: {:?}", x_axis);
+
+         self.rotation_vector.rotate_around_axis(&x_axis, pitch_delta)
+    }
+
+    fn rotate_yaw(&mut self, yaw_delta: f32) -> Vector3D {
+        println!("Yaw Delta: {:?}", yaw_delta);
+
+        let world_up_vector = Vector3D {x: 0.0, y: 1.0, z: 0.0 };
+
+        self.rotation_vector.rotate_around_axis(&world_up_vector, yaw_delta)
     }
 
     pub fn move_strafe(&mut self, delta: f32) {
         // move camera sideways by delta
-        let camera_vector: Vector3D = self.rotation.into();
-        let camera_vector_rotated_90 = camera_vector.rotate_yaw(90.0_f32.to_radians());
+      //  let camera_vector: Vector3D = self.rotation.into();
+        let camera_vector_rotated_90 = self.rotation_vector.rotate_yaw(90.0_f32.to_radians());
 
         let scaled_vector = camera_vector_rotated_90.set_length(delta);
 
@@ -63,9 +83,9 @@ impl Camera {
 
     pub fn move_forward(&mut self, delta: f32) {
         // move camera along its vector by delta
-        let camera_vector: Vector3D = self.rotation.into();
+     //   let camera_vector: Vector3D = self.rotation.into();
 
-        let scaled_vector = camera_vector.set_length(delta);
+        let scaled_vector = self.rotation_vector.set_length(delta);
 
         self.position = self.position.translate(&scaled_vector);
 
@@ -147,39 +167,24 @@ impl Camera {
 
             let vertex_vector_ws = Vector3D::from(point);
 
-            let camera_direction_vector_ws: Vector3D = self.rotation.into(); // TODO: Translate me into position...
-
-        //    let camera_direction_vector_ws = camera_direction_vector_ws.
-
             let camera_position_vector_ws = Vector3D::from(&self.position);
+
+            //TODO: Should we try to convert all to camera space first???
 
             let localised_vertex_vector = &vertex_vector_ws.subtract(&camera_position_vector_ws);
 
-            /* TODO: We need to keep the rotation local to the camera, i.e. rotate relative to camera
-                not the World!
-
-                *** Camera - rotate at world origin then translate to position! ***
-
-                ****** Probably better to have direction as a vector and rotate it as appropriate via matrix ******
-
-                 */
-
-
-
-
-
-
-            let angle_between_vectors = camera_direction_vector_ws.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
-
-            //  let angle_between_vectors = Vector3D{x: 0.0, y: 0.0, z: 1.0}.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
+            let angle_between_vectors = self.rotation_vector.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
 
             let opposite_side = f32::tan(angle_between_vectors) * self.near_plane_distance; // Calculate vector for h i.e. where the vertex vector hits the near plane
 
             // h is the hypotenuse of a right angle triangle where a is the line from the eye to the near plane, and o is the length of the vertex vector where it hits the near plane
             let h = ((opposite_side * opposite_side) + (self.near_plane_distance * self.near_plane_distance)).sqrt();
 
-            let (axis, angle) = camera_direction_vector_ws.get_rotation_to_z_axis();
+            let (axis, angle) = self.rotation_vector.get_rotation_to_z_forward();
 
+
+
+            //TODO: Is this rotating the Z axis??? This has to be the culprit or we need more rotations?
             let localised_vertex_vector = localised_vertex_vector.rotate_around_axis(&axis.normalise(), angle);
 
             let scaled_localised_vertex_vector = localised_vertex_vector.set_length(h); // Shorten vertex vector to touch near plane...

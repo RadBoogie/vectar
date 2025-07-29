@@ -9,7 +9,7 @@
       "z": 0.0
     },
     "rotation": {
-      "pitch": 0.0,
+      "pitch": 1.0,
       "yaw": 0.0,
       "roll": 0.0
     }
@@ -25,7 +25,7 @@
     },
     "rotation": {
       "pitch": 0.0,
-      "yaw": 0.0,
+      "yaw": 1.0,
       "roll": 0.0
     }
   },
@@ -41,7 +41,7 @@
     "rotation": {
       "pitch": 0.0,
       "yaw": 0.0,
-      "roll": 0.0
+      "roll": 1.0
     }
   }
 ,
@@ -55,7 +55,7 @@
       "z": -3.0
     },
     "rotation": {
-      "pitch": 0.0,
+      "pitch": 2.0,
       "yaw": 0.0,
       "roll": 0.0
     }
@@ -64,15 +64,15 @@
   {
     "id": "EnemyTank1",
     "object_type": "enemy_tank",
-    "model": "npcs/tank.obj",
+    "model": "npcs/TankBody.obj",
     "position": {
       "x": 0.0,
       "y": 0.0,
-      "z": -6.0
+      "z": -16.0
     },
     "rotation": {
       "pitch": 0.0,
-      "yaw": 0.0,
+      "yaw": 2.0,
       "roll": 0.0
     }
   }

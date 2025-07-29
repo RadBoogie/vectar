@@ -39,14 +39,11 @@ impl Camera {
     }
 
     pub fn rotate(&mut self, x_delta: f32, y_delta: f32) {
-
         self.rotation.yaw += x_delta.to_radians();
         self.rotation_vector = self.rotate_yaw(x_delta.to_radians());
 
-
         self.rotation.pitch += y_delta.to_radians();
         self.rotation_vector = self.rotate_pitch(y_delta.to_radians());
-
     }
 
      fn rotate_pitch(&mut self, pitch_delta: f32) -> Vector3D {
@@ -169,23 +166,15 @@ impl Camera {
 
             let camera_position_vector_ws = Vector3D::from(&self.position);
 
-            //TODO: Should we try to convert all to camera space first???
-
             let localised_vertex_vector = &vertex_vector_ws.subtract(&camera_position_vector_ws);
 
             let angle_between_vectors = self.rotation_vector.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
 
-            let opposite_side = f32::tan(angle_between_vectors) * self.near_plane_distance; // Calculate vector for h i.e. where the vertex vector hits the near plane
-
-            // h is the hypotenuse of a right angle triangle where a is the line from the eye to the near plane, and o is the length of the vertex vector where it hits the near plane
-            let h = ((opposite_side * opposite_side) + (self.near_plane_distance * self.near_plane_distance)).sqrt();
+            let h = self.near_plane_distance / angle_between_vectors.cos();
 
             let (axis, angle) = self.rotation_vector.get_rotation_to_z_forward();
 
-
-
-            //TODO: Is this rotating the Z axis??? This has to be the culprit or we need more rotations?
-            let localised_vertex_vector = localised_vertex_vector.rotate_around_axis(&axis.normalise(), angle);
+            let localised_vertex_vector = localised_vertex_vector.reorient_to_local_space(&self.rotation_vector);
 
             let scaled_localised_vertex_vector = localised_vertex_vector.set_length(h); // Shorten vertex vector to touch near plane...
 

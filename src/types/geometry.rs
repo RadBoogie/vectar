@@ -299,7 +299,46 @@ impl Vector3D {
         }
     }
 
+    /// # reorient_to_local_space
+    /// Reorients the vector (assumed to be shifted to the new origin) into the local coordinate system
+    /// defined by the camera's forward direction (local_forward). The local_right and local_up vectors
+    /// are computed assuming a world up vector of (0, 0, 1) for yaw/pitch camera orientation.
+    ///
+    /// Returns a new Vector3D representing the vector in local space, with components along
+    /// the local_right (x), local_up (y), and local_forward (z) axes.
+    pub fn reorient_to_local_space(&self, local_forward: &Vector3D) -> Self {
+        // Normalize local_forward to ensure it's a unit vector
+        let forward = local_forward.normalise();
 
+        // Define the world up vector (z-up, common for yaw/pitch systems)
+        let world_up = Vector3D { x: 0.0, y: 1.0, z: 0.0 };
+
+        // Compute local_right as the cross product of forward and world_up
+        let mut local_right = forward.cross_product(&world_up).normalise();
+
+        // Handle the case where forward is parallel to world_up (e.g., looking straight up/down)
+        let is_parallel = forward.dot_product(&world_up).abs() > 0.999; // Check if nearly parallel
+        if is_parallel {
+            // Use an alternative axis (e.g., world forward (1, 0, 0)) to compute right
+            let world_forward = Vector3D { x: 1.0, y: 0.0, z: 0.0 };
+            local_right = forward.cross_product(&world_forward).normalise();
+        }
+
+        // Compute local_up as the cross product of forward and right
+        let local_up = forward.cross_product(&local_right).normalise();
+
+        // Project the vector onto each local axis to get its components
+        let local_x = self.dot_product(&local_right);   // Component along local x-axis (right)
+        let local_y = self.dot_product(&local_up);      // Component along local y-axis (up)
+        let local_z = self.dot_product(&forward);       // Component along local z-axis (forward)
+
+        // Return the vector in local space
+        Self {
+            x: local_x,
+            y: local_y,
+            z: local_z,
+        }
+    }
 }
 
 impl Add for Vector3D {

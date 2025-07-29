@@ -4,9 +4,10 @@ use crate::types::geometry::*;
 pub struct Camera {
     pub position: Point3D,
     pub rotation: EulerAngles,
+    pub rotation_v: Vector3D,
     view_angle: f32,
     pub viewport: Rectangle,
-    near_plane_distance: f32,
+    pub near_plane_distance: f32,
     far_plane_distance: f32,
 }
 
@@ -14,6 +15,7 @@ impl Camera {
     pub fn new(
         position: Point3D,
         rotation: EulerAngles,
+        rotation_v: Vector3D,
         view_angle: f32,
         viewport: Rectangle,
         far_plane_distance: f32,
@@ -23,6 +25,7 @@ impl Camera {
         Self {
             position,
             rotation,
+            rotation_v,
             view_angle,
             viewport,
             near_plane_distance,
@@ -36,6 +39,7 @@ impl Camera {
     }
 
     pub fn rotate(&mut self, x_delta: f32, y_delta: f32) {
+
         self.rotation.yaw += x_delta.to_radians();
 
         //TODO: Seems that pitch always applies to World X?
@@ -141,63 +145,51 @@ impl Camera {
                 //   println!("Opposite side: {:?}", opposite_side);
             }
 
-            // Vector from World origin to vertex
-            let vertex_vector_world_space = Vector3D::from(point);
+            let vertex_vector_ws = Vector3D::from(point);
 
-            // Vector to camera position from World origin
-            let camera_position_vector = Vector3D::from(&self.position);
+            let camera_direction_vector_ws: Vector3D = self.rotation.into(); // TODO: Translate me into position...
 
-            // Convert vertex vector origin to match camera origin
-            let localised_vertex_vector = &camera_position_vector.subtract(&vertex_vector_world_space);
-            //  let localised_vertex_vector = &vertex_vector_world_space.subtract(&camera_position_vector);
+        //    let camera_direction_vector_ws = camera_direction_vector_ws.
 
-            // The direction the camera is facing
-            let camera_vector: Vector3D = self.rotation.into();
-            let camera_vector = camera_vector.clone().normalise();
+            let camera_position_vector_ws = Vector3D::from(&self.position);
 
-            // Get the angle between the vertex vector and the camera look vector
-            let angle_between_vectors = camera_vector.angle_to_other_vector(&localised_vertex_vector);
+            let localised_vertex_vector = &vertex_vector_ws.subtract(&camera_position_vector_ws);
 
-            // Calculate vector for h i.e. where the vertex vector hits the near plane
-            let opposite_side = f32::tan(angle_between_vectors) * self.near_plane_distance;
+            /* TODO: We need to keep the rotation local to the camera, i.e. rotate relative to camera
+                not the World!
 
-            // h is the hypotenuse of a right angle triangle where a is the line from the eye to the
-            // near plane, and o is the length of the vertex vector where it hits the near plane
-            let h = ((opposite_side * opposite_side)
-                + (self.near_plane_distance * self.near_plane_distance)).sqrt();
+                *** Camera - rotate at world origin then translate to position! ***
 
-            //TODO: I reckon this is where it all goes wrong. For some reason the rotation pitch is
-            // with reference to World X not local camera X. Actually the rotation point seems to
-            // be very far off to the -Z. Off the screen in fact.
+                ****** Probably better to have direction as a vector and rotate it as appropriate via matrix ******
 
-            let (axis, angle) = camera_vector.get_rotation_to_z_axis();
-            let camera_vector = camera_vector.rotate_around_axis(&axis, angle);
-            let localised_vertex_vector = localised_vertex_vector.normalise().rotate_around_axis(&axis, angle);
+                 */
 
 
-            if debug {
-                   println!("Angle between vectors: {:?}", angle_between_vectors.to_degrees());
-                    println!("Opposite side: {:?}", opposite_side);
-                    println!("Hypotenuse: {:?}", h);
-                    println!("Camera Vector: {:?}", camera_vector);
-                    println!("Localised Vertex Vector: {:?}", localised_vertex_vector);
-                    println!("**************");
-            }
 
-          //  let localised_vertex_vector = localised_vertex_vector.rotate_pitch(self.rotation.pitch * 10.0);
 
-            // Shorten vertex vector to touch near plane...
-            let scaled_localised_vertex_vector = localised_vertex_vector.set_length(h);
 
-            // Finally we get a vector from the point where the camera vector touches the near plane
-            // to the point where the scaled_localised_vertex_vector touches the near plane. The
-            // X & Y coords give us our 3d projection
-            let scaled_vector_camera = camera_vector.set_length(self.near_plane_distance);
-            let vector_camera_to_point = scaled_vector_camera.subtract(&scaled_localised_vertex_vector);
+
+            let angle_between_vectors = camera_direction_vector_ws.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
+
+            //  let angle_between_vectors = Vector3D{x: 0.0, y: 0.0, z: 1.0}.angle_to_other_vector(&localised_vertex_vector); // Get the angle between the vertex vector and the camera look vector
+
+            let opposite_side = f32::tan(angle_between_vectors) * self.near_plane_distance; // Calculate vector for h i.e. where the vertex vector hits the near plane
+
+            // h is the hypotenuse of a right angle triangle where a is the line from the eye to the near plane, and o is the length of the vertex vector where it hits the near plane
+            let h = ((opposite_side * opposite_side) + (self.near_plane_distance * self.near_plane_distance)).sqrt();
+
+            let (axis, angle) = camera_direction_vector_ws.get_rotation_to_z_axis();
+
+            let localised_vertex_vector = localised_vertex_vector.rotate_around_axis(&axis.normalise(), angle);
+
+            let scaled_localised_vertex_vector = localised_vertex_vector.set_length(h); // Shorten vertex vector to touch near plane...
+
+            let viewport_width_div_2 = &self.viewport.width / 2.0;
+            let viewport_height_div_2 = &self.viewport.height / 2.0;
 
             projected_points.push(Point2D {
-                x: vector_camera_to_point.x,
-                y: vector_camera_to_point.y,
+                x: scaled_localised_vertex_vector.x + viewport_width_div_2,
+                y: scaled_localised_vertex_vector.y + viewport_height_div_2,
             });
         }
 

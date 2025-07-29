@@ -145,7 +145,7 @@ impl ScreenRenderer for Level1Screen {
         let viewport_height = camera.viewport.height;
         let viewport_width_div_2 = &camera.viewport.width / 2.0;
         let viewport_height_div_2 = &camera.viewport.height / 2.0;
-
+        
         for mesh in &self.meshes {
 
             //TODO: Render 3D Points to 2D via camera
@@ -188,7 +188,7 @@ impl ScreenRenderer for Level1Screen {
                 }
 
                 if face_outside_viewport{
-                    continue;
+                  //  continue;
                 }
 
                 // Render faces
@@ -196,8 +196,8 @@ impl ScreenRenderer for Level1Screen {
                     let first_vert = verts.get(i).unwrap();
                     let second_vert = if i == num_verts - 1 { verts.get(0).unwrap() } else {verts.get(i + 1).unwrap()} ;
 
-                    let start: Pos2 = [first_vert.x + viewport_width_div_2, first_vert.y + viewport_height_div_2].into();
-                    let end: Pos2 = [second_vert.x + viewport_width_div_2, second_vert.y + viewport_height_div_2].into();
+                    let start: Pos2 = [first_vert.x, first_vert.y].into();
+                    let end: Pos2 = [second_vert.x, second_vert.y].into();
 
                     painter.line_segment(
                         [start, end],

@@ -24,8 +24,9 @@ struct Game {
 impl Game {
     fn new(_cc: &eframe::CreationContext<'_>) -> Game {
         let camera = player::camera::Camera::new(
-            types::geometry::Point3D { x: 50.0, y: 0.0, z: 0.0 },
+            types::geometry::Point3D { x: 5.0, y: 0.0, z: 0.0 },
             EulerAngles { pitch: 0.0, yaw: 90.0_f32.to_radians(), roll: 0.0 },
+            Vector3D{x: 0.0, y: 0.0, z: 1.0},
             90.0,
             Rectangle { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
             1000.0,
@@ -57,7 +58,7 @@ impl eframe::App for Game {
             let mouse_delta = input.pointer.delta();
             if mouse_delta != egui::Vec2::ZERO && input.pointer.primary_down() {
                 // Use mouse_delta.x, mouse_delta.y to adjust camera (e.g., yaw/pitch)
-                self.camera.rotate(-mouse_delta.x / 5.0, mouse_delta.y / 5.0);
+                self.camera.rotate(mouse_delta.x / 5.0, mouse_delta.y / 5.0);
             }
             if input.pointer.button_clicked(egui::PointerButton::Primary) {
                 // Handle left-click (e.g., shoot or select)
@@ -70,7 +71,7 @@ impl eframe::App for Game {
             }
 
             if input.key_down(egui::Key::A) {
-                self.camera.move_strafe(-0.1);
+                self.camera.move_strafe(0.1);
             }
 
             if input.key_down(egui::Key::S) {
@@ -78,7 +79,7 @@ impl eframe::App for Game {
             }
 
             if input.key_down(egui::Key::D) {
-                self.camera.move_strafe(0.1);
+                self.camera.move_strafe(-0.1);
             }
             
             

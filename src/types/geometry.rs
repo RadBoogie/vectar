@@ -364,15 +364,20 @@ pub struct EulerAngles {
 
 ///Problem: For pitch this seems to rotate the pitch about the X axis at the World origin and not
 /// the camera local origin. Yaw seems to rotate about the camera origin
+/// 
+/// Surely this has to be local to the camera because we want to rotate the camera not the World!
 impl From<EulerAngles> for Vector3D {
     fn from(euler: EulerAngles) -> Self {
         let (sin_pitch, cos_pitch) = euler.pitch.sin_cos();
         let (sin_yaw, cos_yaw) = euler.yaw.sin_cos();
-
+        
         // Compute direction vector for +Z forward, +Y up
         let x = -sin_yaw * cos_pitch; // +X is right
         let y = sin_pitch;            // +Y is up
         let z = cos_yaw * cos_pitch;  // +Z is forward
+
+        println!("Euler: Pitch:{}, Roll:{}, Yaw:{}", euler.pitch.to_degrees(), euler.roll.to_degrees(), euler.yaw.to_degrees());
+        println!("Vector: {:?}", Vector3D { x, y, z });
 
         Vector3D { x, y, z }
     }
@@ -540,4 +545,152 @@ fn test_set_length_vector3d() {
     // Verify new length
     let magnitude = (result.x * result.x + result.y * result.y + result.z * result.z).sqrt();
     assert!((magnitude - 10.0).abs() < 1e-5);
+}
+
+// Helper to create Vector3D
+fn vec3(x: f32, y: f32, z: f32) -> Vector3D {
+    Vector3D { x, y, z }
+}
+
+// Helper to check if vectors are approximately equal
+fn assert_vectors_approx_eq(v1: &Vector3D, v2: &Vector3D, epsilon: f32) {
+    assert!(
+        (v1.x - v2.x).abs() < epsilon &&
+            (v1.y - v2.y).abs() < epsilon &&
+            (v1.z - v2.z).abs() < epsilon,
+        "Vectors not equal: v1={:?}, v2={:?}", v1, v2
+    );
+}
+
+#[test]
+fn test_rotation_to_z_axis_already_z() {
+    // Input already (0, 0, 1)
+    let input = vec3(0.0, 0.0, 1.0);
+    let (axis, angle) = input.get_rotation_to_z_axis();
+
+    // Apply rotation
+    let result = input.rotate_around_axis(&axis, angle);
+
+    // Should stay (0, 0, 1)
+    assert_vectors_approx_eq(&result, &vec3(0.0, 0.0, 1.0), 1e-5);
+    assert!((angle.abs()) < 1e-5, "Expected angle ~0, got {}", angle);
+}
+
+#[test]
+fn test_rotation_to_z_axis_x_axis() {
+    // Input (1, 0, 0) -> rotate 90° around Y
+    let input = vec3(1.0, 0.0, 0.0);
+    let (axis, angle) = input.get_rotation_to_z_axis();
+
+    // Axis should be ~Y (0, ±1, 0)
+    assert_vectors_approx_eq(&axis, &vec3(0.0, 1.0, 0.0), 1e-5);
+    // Angle ~90° (π/2 radians)
+    assert!((angle - PI / 2.0).abs() < 1e-5, "Expected angle ~π/2, got {}", angle);
+
+    // Apply rotation
+    let result = input.rotate_around_axis(&axis, angle);
+    assert_vectors_approx_eq(&result, &vec3(0.0, 0.0, 1.0), 1e-5);
+}
+
+#[test]
+fn test_rotation_to_z_axis_negative_z() {
+    // Input (0, 0, -1) -> rotate 180° (matches Euler 0,90,0)
+    let input = vec3(0.0, 0.0, -1.0);
+    let (axis, angle) = input.get_rotation_to_z_axis();
+
+    // Axis perpendicular to (0,0,-1) and (0,0,1)
+    let dot = axis.dot_product(&vec3(0.0, 0.0, 1.0));
+    assert!(dot.abs() < 1e-5, "Axis not perpendicular, dot={}", dot);
+    // Angle ~180° (π radians)
+    assert!((angle - PI).abs() < 1e-5, "Expected angle ~π, got {}", angle);
+
+    // Apply rotation
+    let result = input.rotate_around_axis(&axis, angle);
+    assert_vectors_approx_eq(&result, &vec3(0.0, 0.0, 1.0), 1e-5);
+}
+
+#[test]
+fn test_rotation_to_z_axis_arbitrary() {
+    // Input (1, 1, 1) normalized
+    let input = vec3(1.0, 1.0, 1.0).normalise();
+    let (axis, angle) = input.get_rotation_to_z_axis();
+
+    // Axis perpendicular to input and (0,0,1)
+    let dot = axis.dot_product(&input);
+    assert!(dot.abs() < 1e-5, "Axis not perpendicular to input, dot={}", dot);
+    let dot = axis.dot_product(&vec3(0.0, 0.0, 1.0));
+    assert!(dot.abs() < 1e-5, "Axis not perpendicular to z, dot={}", dot);
+
+    // Apply rotation
+    let result = input.rotate_around_axis(&axis, angle);
+    assert_vectors_approx_eq(&result, &vec3(0.0, 0.0, 1.0), 1e-5);
+}
+
+#[test]
+fn test_rotation_to_z_axis_diagonal() {
+    // Input (1, 0, 1) -> non-trivial rotation
+    let input = vec3(1.0, 0.0, 1.0).normalise();
+    let (axis, angle) = input.get_rotation_to_z_axis();
+
+    // Angle should be ~45° (π/4 radians)
+    let expected_angle = f32::acos(1.0 / f32::sqrt(2.0));
+    assert!((angle - expected_angle).abs() < 1e-5, "Expected angle ~π/4, got {}", angle);
+
+    // Apply rotation
+    let result = input.rotate_around_axis(&axis, angle);
+    assert_vectors_approx_eq(&result, &vec3(0.0, 0.0, 1.0), 1e-5);
+}
+
+
+#[test]
+fn test_euler_to_vector_zero() {
+    // Pitch=0, Yaw=0, Roll=0 -> +Z (0, 0, 1)
+    let euler = EulerAngles {
+        pitch: 0.0,
+        yaw: 0.0,
+        roll: 0.0,
+    };
+    let vector: Vector3D = euler.into();
+    assert_vectors_approx_eq(&vector, &vec3(0.0, 0.0, 1.0), 1e-5);
+}
+
+#[test]
+fn test_euler_to_vector_pitch_90() {
+    // Pitch=90°, Yaw=0, Roll=0 -> +Y (0, 1, 0)
+    let euler = EulerAngles {
+        pitch: PI / 2.0,
+        yaw: 0.0,
+        roll: 0.0,
+    };
+    let vector: Vector3D = euler.into();
+    assert_vectors_approx_eq(&vector, &vec3(0.0, 1.0, 0.0), 1e-5);
+}
+
+#[test]
+fn test_euler_to_vector_yaw_90() {
+    // Pitch=0, Yaw=90°, Roll=0 -> -Z (0, 0, -1)
+    let euler = EulerAngles {
+        pitch: 0.0,
+        yaw: PI / 2.0,
+        roll: 0.0,
+    };
+    let vector: Vector3D = euler.into();
+    assert_vectors_approx_eq(&vector, &vec3(0.0, 0.0, -1.0), 1e-5);
+}
+
+#[test]
+fn test_euler_to_vector_diagonal() {
+    // Pitch=45°, Yaw=45°, Roll=0 -> Diagonal direction
+    let euler = EulerAngles {
+        pitch: PI / 4.0,
+        yaw: PI / 4.0,
+        roll: 0.0,
+    };
+    let vector: Vector3D = euler.into();
+    let expected = vec3(
+        (PI / 4.0).sin() * (PI / 4.0).cos(),
+        (PI / 4.0).sin(),
+        -(PI / 4.0).cos() * (PI / 4.0).cos(),
+    );
+    assert_vectors_approx_eq(&vector, &expected, 1e-5);
 }

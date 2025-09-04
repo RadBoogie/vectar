@@ -155,8 +155,8 @@ impl ScreenRenderer for Level1Screen {
             let mut mut_mesh = mesh.clone();
 
             unsafe {
-              //  mut_mesh.rotation.pitch += rotation.to_radians();
-             //   mut_mesh.rotation.roll += rotation.to_radians();
+                mut_mesh.rotation.pitch += rotation.to_radians();
+                mut_mesh.rotation.roll += rotation.to_radians();
                 mut_mesh.rotation.yaw += rotation.to_radians();
             }
 
